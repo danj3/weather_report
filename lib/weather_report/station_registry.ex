@@ -75,13 +75,21 @@ defmodule WeatherReport.StationRegistry do
   Retrieves the station list and inserts it into ets.
   """
   def handle_info(:get_list, tab) do
-    entries =
-      Station.station_list()
-      |> Enum.map(fn station ->
-        {station.station_id, station.state, {station.latitude, station.longitude}, station}
-      end)
-
-    true = :ets.insert(tab, entries)
-    {:noreply, tab}
+    with stations when is_list(stations) <- Station.station_list(),
+    entries <- Enum.map(stations, &station_tuple/1),
+	   true <- :ets.insert(tab, entries) do
+      {:noreply, tab}
+    else
+      {:error, %{reason: :nxdomain}} = err ->
+	# Recoverable if networking is not yet usable
+	# Slow things down so that the supervisor can restart
+	Process.sleep(5_000)
+      err
+      other -> other
+    end
+  end
+  
+  defp station_tuple(station) do
+    {station.station_id, station.state, {station.latitude, station.longitude}, station}
   end
 end

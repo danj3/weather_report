@@ -4,7 +4,7 @@ defmodule WeatherReport.Mixfile do
   def project do
     [
       app: :weather_report,
-      version: "0.3.0",
+      version: "0.9.1",
       elixir: "~> 1.13",
       description: description(),
       package: package(),
